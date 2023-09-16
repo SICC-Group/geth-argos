@@ -1,17 +1,17 @@
 # [PATHS]
 export HOMEFOLDER=$HOME
-export MAINFOLDER="$HOMEFOLDER/geth-argos"
+export MAINFOLDER="$HOMEFOLDER/workspace/fl_argos/geth-argos"
 export DOCKERFOLDER="$MAINFOLDER/argos-blockchain-sm"
 export ARGOSFOLDER="$MAINFOLDER/argos-python"
 export EXPERIMENTFOLDER="$MAINFOLDER/TrajectoryPrediction"
-export SERVERFOLDER="$EXPERIMENTFOLDER/tfserver"
+export SERVERFOLDER="$EXPERIMENTFOLDER/torchserver"
 export BLOCKCHAINPATH="$HOMEFOLDER/eth_data_para/data"
 
 # [FILES]
 export ARGOSNAME="greeter"
 export GENESISNAME="genesis_poa"
 export CONTRACTNAME="FederatedLearning"
-export SCNAME="federatedsc3V2"
+export SCNAME="fedsc_gradV1"
 
 export GENESISFILE="${DOCKERFOLDER}/geth/files/$GENESISNAME.json"
 export CONTRACTADDRESS="${EXPERIMENTFOLDER}/scs/contractAddress.txt"
@@ -21,7 +21,7 @@ export SCFILE="${EXPERIMENTFOLDER}/scs/${SCNAME}.sol"
 export SCTEMPLATE="${EXPERIMENTFOLDER}/scs/${SCNAME}.x.sol" 
 export ARGOSFILE="${EXPERIMENTFOLDER}/experiments/${ARGOSNAME}.argos"
 export ARGOSTEMPLATE="${EXPERIMENTFOLDER}/experiments/${ARGOSNAME}.argosx"
-export SERVERFILE="${SERVERFOLDER}/main.py"
+export SERVERFILE="${SERVERFOLDER}/main_agg_grad.py"
 
 # [DOCKER]
 export SWARMNAME=ethereum
@@ -62,6 +62,7 @@ export TIMELIMIT=83
 export SLEEPTIME=5
 export REPS=8
 export NOTES=""
+export NUMWEIGHTS=2912 # 2848 for tf; 2912 for torch
 
 
 

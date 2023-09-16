@@ -15,6 +15,7 @@ echo "MAINFOLDER IS $MAINFOLDER"
 echo "+-----------------------------------------------------------+"
 echo "Updating the ARGoS XML file"
 
+rm -f ./experiments/greeter.argos
 envsubst < $ARGOSTEMPLATE > $ARGOSFILE
 
 echo "+-----------------------------------------------------------+"
@@ -55,7 +56,7 @@ echo "Launching server"
 
 for opt in "$@"; do
 if [[ $opt == "--server" || $opt == "-sv" ]]; then
-    gnome-terminal -- python3 $SERVERFILE
+    gnome-terminal -- bash -c 'python3 $SERVERFILE; exec bash'
 fi
 done
 
