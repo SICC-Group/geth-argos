@@ -14,7 +14,7 @@ run() {
 	if  [[ $2 = "--test" || $2 = "-t" ]]; then
 		echo "Running test ${1}"
 		. starter -r -sv -s
-        python3 "tfserver/server_shutdown.py"
+        python3 "torchserver/server_shutdown.py"
 
 	else
 		for REP in $(seq 1 ${REPS}); do
@@ -23,8 +23,8 @@ run() {
 
 			# Perform experiment
 			. starter -r -sv -sz
-            #shutdown the tf server
-            python3 "tfserver/server_shutdown.py"
+            #shutdown the torch server
+            python3 "torchserver/server_shutdown.py"
             
 
 			# Collect data
@@ -43,8 +43,9 @@ run() {
 
 # EXP=first_security
 # EXP=second_security
-EXP=smart_byzantine
-config "REPS" 8
+# EXP=smart_byzantine
+EXP=noise
+config "REPS" 1
 
 
 # CFG=0b
@@ -59,11 +60,11 @@ config "NUM2" 1
 wait
 run    "${EXP}/${CFG}" $1
 
-CFG=2b
-config "NUM1" 13
-config "NUM2" 2
-wait
-run    "${EXP}/${CFG}" $1
+# CFG=2b
+# config "NUM1" 13
+# config "NUM2" 2
+# wait
+# run    "${EXP}/${CFG}" $1
 
 CFG=3b
 config "NUM1" 12
@@ -71,26 +72,26 @@ config "NUM2" 3
 wait
 run    "${EXP}/${CFG}" $1
 
-CFG=4b
-config "NUM1" 11
-config "NUM2" 4
-wait
-run    "${EXP}/${CFG}" $1
+# CFG=4b
+# config "NUM1" 11
+# config "NUM2" 4
+# wait
+# run    "${EXP}/${CFG}" $1
 
-CFG=5b
-config "NUM1" 10
-config "NUM2" 5
-wait
-run    "${EXP}/${CFG}" $1
+# CFG=5b
+# config "NUM1" 10
+# config "NUM2" 5
+# wait
+# run    "${EXP}/${CFG}" $1
 
-CFG=6b
-config "NUM1" 9
-config "NUM2" 6
-wait
-run    "${EXP}/${CFG}" $1
+# CFG=6b
+# config "NUM1" 9
+# config "NUM2" 6
+# wait
+# run    "${EXP}/${CFG}" $1
 
-CFG=7b
-config "NUM1" 8
-config "NUM2" 7
-wait
-run    "${EXP}/${CFG}" $1
+# CFG=7b
+# config "NUM1" 8
+# config "NUM2" 7
+# wait
+# run    "${EXP}/${CFG}" $1

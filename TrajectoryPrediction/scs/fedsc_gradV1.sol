@@ -8,7 +8,9 @@ contract FederatedLearning {
     uint16 constant numWeights = 2912; // number of weights of the neural networks
     int48[numWeights] currentWeights; // the last valid aggregated weights from the previous round
     int48[numWeights] previousWeights;
-    // int48[][] acceptedGradients;
+    int48[numWeights] currentAggGradients;
+    int48[numWeights] previousAggGradients;
+    // int48[numWeights][numParticipants] acceptedGradients;
     // int48[][] previousGradients;
     address[numParticipants] participantsList; // the participants of a round of aggregation
     address[numParticipants] previousParticipants;
@@ -52,22 +54,32 @@ contract FederatedLearning {
         version ++;
     }
 
-    function gradientsSubmission (
-        int robot_id,
-        int nbSamples,
+    function aggGradSubmission (
         int48[numWeights] memory gradients
     ) external {
-        require(
-            !participantsMap[msg.sender].participates,
-            "Must not already be in current round of aggregation."
-        );
+        previousAggGradients = currentAggGradients;
+        currentAggGradients = gradients;
+    }
+
+    function gradientsSubmission (
+        int robot_id,
+        int nbSamples
+        // int48[numWeights] memory gradients
+    ) external {
+        // require(
+        //     !participantsMap[msg.sender].participates,
+        //     "Must not already be in current round of aggregation."
+        // );
         // participantsList.push(msg.sender);
         participantsList[currentParticipants] = msg.sender;
         participantsMap[msg.sender].participates = true;
         participantsMap[msg.sender].samples = nbSamples;
         participantsMap[msg.sender].money -= 1;
         participantsMap[msg.sender].robotID = robot_id;
-        participantsMap[msg.sender].grad = gradients;
+        // participantsMap[msg.sender].grad = gradients;
+        // for (uint16 i = 0; i < numWeights; i ++ ) {
+        //     acceptedGradients[currentParticipants][i] = gradients[i];
+        // }
         currentParticipants ++;
 
         if (currentParticipants % numParticipants == 0) {
@@ -92,7 +104,7 @@ contract FederatedLearning {
         // for (uint8 i = 0; i < participantsList.length; i ++) {
         //     participantsMap[participantsList[i]].participates = false;
         // }
-        previousParticipants = participantsList;
+        // previousParticipants = participantsList;
         currentParticipants = 0;
         // delete participantsList;
     }
@@ -262,6 +274,10 @@ contract FederatedLearning {
     // returns the current weights
     function getWeights() external view returns(int48[numWeights] memory){
         return currentWeights;
+    }
+
+    function getAggGradients() external view returns(int48[numWeights] memory){
+        return currentAggGradients;
     }
 
     function getWeights0() external view returns (int48) {

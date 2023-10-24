@@ -149,7 +149,9 @@ class AI:
         y_val = torch.from_numpy(y_val).to(self.device, dtype=torch.float)
         
         train_set = TensorDataset(x_train, y_train)
-        train_set_loader = DataLoader(train_set, batch_size=cp['LOCAL_BATCH'])
+        train_set_loader = DataLoader(
+            train_set, batch_size=cp['LOCAL_BATCH']#, shuffle=True
+        )
 
         val_set = TensorDataset(x_val, y_val)
         val_set_loader = DataLoader(val_set)

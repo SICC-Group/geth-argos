@@ -14,7 +14,6 @@ from init_weights import *
 
 PRECISION = 10**9
 price = 5*10**16  # 5*10**18
-times = 0
 
 class seblogger:
 	def __init__(self, logfile, header) -> None:
@@ -94,8 +93,8 @@ def blockHandle():
 	version = sc.functions.version().call()
 	money = sc.functions.getMoney().call()
 	currentWeights0 = sc.functions.getWeights0().call()
-	ParticipantsList = sc.functions.getParticipantsList().call()
-	currentParticipants = sc.functions.getcurrentParticipants().call()
+	# ParticipantsList = sc.functions.getParticipantsList().call()
+	# currentParticipants = sc.functions.getcurrentParticipants().call()
 	# previousBlockHash = sc.functions.getPreviousBlockHash().call().hex()
 	blockNumber = sc.functions.getBlockNumber().call()
 	# blockHash = sc.functions.getBlockHash().call().hex()
@@ -106,13 +105,13 @@ def blockHandle():
 	logs['sc'].log([
 		# delta,
 		blockNumber,
-		currentParticipants,
-		ParticipantsList[-3:],
+		version,
+		money,
+		# currentParticipants,
+		# ParticipantsList[-3:],
 		"===", 
 		len(previousAccepted),
 		"===",
-		version,
-		money,
 		currentWeights0,
 		# ParticipantsList,
 		# previousBlockHash, 
@@ -147,7 +146,6 @@ def get_server_message(server):
 
 
 def server_training_grad(ip, port, address):
-	global times
 	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
 		server.connect((ip,port))
 		server_dict = get_server_message(server)  # 'info': "ready"
@@ -159,7 +157,8 @@ def server_training_grad(ip, port, address):
 			'ID': robotID,
 			'weights': weights,
 			'version': version,
-			'address': address
+			'address': address,
+			'colab': colab
 		}
 		msg = pickle.dumps(msg)
 		msg = bytes(f'{len(msg):<{HEADERSIZE}}', "utf-8") + msg
@@ -168,33 +167,34 @@ def server_training_grad(ip, port, address):
 		server_dict = get_server_message(server)
 		nb_sample = server_dict['nb_samples']
 		weights = server_dict['weights']
+		agg_grad = server_dict['agg_grad']
 		gradients = server_dict['gradients']
 		gradients = [int(g * PRECISION) for g in gradients]
-		print("======================")
-		print("nbSampels: ", nb_sample)
-		print("info of gradient - max: {}, min: {}, length: {}".format(
-			max(gradients), min(gradients), len(gradients)
-		))
-		print("info of weights  - max: {}, min: {}, length: {}".format(
-			max(weights), min(weights), len(weights)
-		))
-		start = datetime.datetime.now()
+		# print("======================")
+		# print("nbSampels: ", nb_sample)
+		# print("info of gradient - max: {}, min: {}, length: {}".format(
+		# 	max(gradients), min(gradients), len(gradients)
+		# ))
+		# print("info of weights  - max: {}, min: {}, length: {}".format(
+		# 	max(weights), min(weights), len(weights)
+		# ))
+		# start = datetime.datetime.now()
 		sc.functions.gradientsSubmission(
-			int(robotID), nb_sample, gradients
+			int(robotID), nb_sample#, gradients
 		).transact()
-		delta = float((datetime.datetime.now() - start).total_seconds())
-		print("grad submission time: ", delta)
-		if len(weights) > 1:
+		# delta = float((datetime.datetime.now() - start).total_seconds())
+		# print("grad submission time: ", delta)
+		if len(weights) > 1 and len(agg_grad) > 1:
 			weights = [int(w * PRECISION) for w in weights]
+			agg_grad = [int(g * PRECISION) for g in agg_grad]
 			sc.functions.weightsSubmission(weights).transact() # {"value":price}
+			sc.functions.aggGradSubmission(agg_grad).transact()
 		# print("")
-		# times += 1
-		# print("gradSubmission is OK - times:", times)
 
 		# try:
 		# 	sc.functions.gradientsSubmission(gradients)
 			
-		# 	sc.functions.weightsSubmission(
+		# 	sc.functions.aggSubmission(
 		# 		nb_sample, weights
 		# 	)# .transact({"value":price})
 		# except Exception:
@@ -205,24 +205,49 @@ def server_training_grad(ip, port, address):
 def compute_mae(wa, wb):
 	return sum(abs(wa[i]-wb[i]) for i in range(len(wa)))/len(wa)
 
-def bad_behaviour(current, previous, rtype=2):
-	if rtype == 0 :
+def bad_behaviour(ip, port, address, current, previous, rtype=2):
+	if rtype == 0:  # random noise
 		nb_sample = 200
-		weights = [random.randint(-5*10**8, 5*10**8) for _ in range(2912)] # exp 2 & 3
+		gradients = [random.uniform(-1, 1) for _ in range(2912)] # exp 2 & 3
 	elif rtype == 1:
-		weights = sc.functions.getWeights().call() # exp 4
-		nb_sample = 200
-	else :
-		nb_sample = 200
-		mae = compute_mae(current, previous)
-		weights = [elem+int((random.random())*mae*2) for elem in current] # exp 5
+		# weights = sc.functions.getWeights().call() # exp 4
+		# nb_sample = 200
+		pass
+	else:
+		# nb_sample = 200
+		# mae = compute_mae(current, previous)
+		# weights = [elem+int((random.random())*mae*2) for elem in current] # exp 5
+		pass
+	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+		server.connect((ip,port))
+		server_dict = get_server_message(server)  # 'info': "ready"
 
-	try:
-		sc.functions.weightsSubmission(
-			nb_sample, weights
-		).transact({"value":price})
-	except Exception:
-		print(Exception)
+		msg = {'ID': robotID, 'grad': gradients, 'colab': colab, 'weights': 0}
+		msg = pickle.dumps(msg)
+		msg = bytes(f'{len(msg):<{HEADERSIZE}}', "utf-8") + msg
+		server.send(msg)
+
+		server_dict = get_server_message(server)
+		nb_sample = server_dict['nb_samples']
+		weights = server_dict['weights']
+		agg_grad = server_dict['agg_grad']
+		gradients = server_dict['gradients']
+		gradients = [int(g * PRECISION) for g in gradients]
+		sc.functions.gradientsSubmission(
+			int(robotID), nb_sample#, gradients
+		).transact()
+		if len(weights) > 1 and len(agg_grad) > 1:
+			weights = [int(w * PRECISION) for w in weights]
+			agg_grad = [int(g * PRECISION) for g in agg_grad]
+			sc.functions.weightsSubmission(weights).transact() # {"value":price}
+			sc.functions.aggGradSubmission(agg_grad).transact()
+
+	# try:
+	# 	sc.functions.aggSubmission(
+	# 		nb_sample, weights
+	# 	).transact({"value":price})
+	# except Exception:
+	# 	print(Exception)
 
 def handle_event_before(event):
 	print("Before modifying")
@@ -316,6 +341,8 @@ if __name__ == '__main__':
 	version = sc.functions.version().call()
 	current_weights = sc.functions.getWeights().call()
 	previous_weights = current_weights
+	current_grad = sc.functions.getAggGradients().call()
+	previous_grad = current_grad
 	address = sc.functions.getAddress().call()
 
 	time_sleep = 0.5
@@ -332,16 +359,20 @@ if __name__ == '__main__':
 		# clock = time.time()-start_time
 
 		if colab and time.time() - training_time > training_interval_time: 
+			# time.sleep(float(robotID))
 			version = server_training_grad(tf_ip, tf_port, address)
 			training_time = time.time()
 		elif time.time() - training_time > training_interval_time: 
-			bad_behaviour(current_weights, previous_weights, 2)
+			# time.sleep(float(robotID))
+			bad_behaviour(tf_ip, tf_port, address, current_weights, previous_weights, 0)
 			training_time = time.time()
 
 		if not colab and version < sc.functions.version().call():
 			version = sc.functions.version().call()
 			previous_weights = current_weights
 			current_weights = sc.functions.getWeights().call()
+			previous_grad = current_grad
+			current_grad = sc.functions.getAggGradients().call()
 
 		newBlocks = bf.get_new_entries()
 		if newBlocks:

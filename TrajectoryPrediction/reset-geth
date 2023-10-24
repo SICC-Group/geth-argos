@@ -57,7 +57,7 @@ echo "Creating the identifier file"
 seq 1 $NUMROBOTS > temp1.txt
 
 # Get containers
-docker ps --format '{{.Names}} {{.ID}}' | sort -V > temp2.txt
+docker ps --format '{{.Names}} {{.ID}}' | grep ${CONTAINERBASE} | sort -V > temp2.txt
 
 # Get external IP @ 172.
 ./bash-all -s "ip a" | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | grep "172." | grep -v ".255" > temp3.txt
