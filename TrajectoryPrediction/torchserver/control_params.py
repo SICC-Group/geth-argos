@@ -28,7 +28,7 @@ params['LOCAL_EPOCHS'] = 1
 params['LOCAL_BATCH'] = 20
 params['RANDOM_SEED'] = 0
 
-# 'multi-Krum'--, 'GeoMed', 'AutoGM', 'Median'
-# 'TrimmedMean', 'CenteredClipping', 'Clustering'
-# 'ClippedClustering', 'DnC'--, 'SignGuard', 'Mean'
+# 'multiKrum'--, 'geoMed', 'autoGM', 'median'
+# 'trimmedMean', 'centeredClipping', 'clustering'
+# 'clippedClustering', 'DnC'--, 'signGuard', 'mean'
 params['AGGREGATION'] = 'DnC'

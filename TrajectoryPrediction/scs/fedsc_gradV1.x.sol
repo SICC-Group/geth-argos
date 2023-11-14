@@ -5,7 +5,7 @@ contract FederatedLearning {
     uint8 constant numParticipants = ${MAXWORKERS}; // number of robots in an experiment
     // uint8 constant minParticipant = numParticipants/2; // number of participant required for a round of aggregation
     
-    uint16 constant numWeights = ${NUMWEIGHTS}; // number of weights of the neural networks
+    uint16 constant numWeights = ${NUMPARAMS}; // number of weights of the neural networks
     int48[numWeights] currentWeights; // the last valid aggregated weights from the previous round
     int48[numWeights] previousWeights;
     int48[numWeights] currentAggGradients;

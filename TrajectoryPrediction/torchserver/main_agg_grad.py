@@ -134,7 +134,7 @@ def process_grad(ai: AI, gradients: list, robot_id: int, samples: int):
     else:
         agg_grad = aggregate(accepted_gradients)
         print(f"\nagg_method: {cp['AGGREGATION']}\n")
-        ai.set_grad(agg_grad)  # including gradients step
+        ai.set_grad_step(agg_grad)  # including gradients step
         weights = ai.params_to_list(option='weights')
         accepted_gradients.clear()
         all_samples.clear()

@@ -12,7 +12,7 @@ python3 /root/python_scripts/buffer.py $SLOT&
 # python3 /root/python_scripts/fedlerv2.py $SLOT&
 
 echo "Starting federated learning docker container" 
-python3 /root/python_scripts/fed_grad.py $SLOT&
+python3 /root/python_scripts/fed_gradV2.py $SLOT&
 
 # echo "Starting communication size logging"
 # bash /root/python_scripts/communication_size.sh $ip &

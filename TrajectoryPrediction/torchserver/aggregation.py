@@ -104,10 +104,10 @@ def _clip(v: torch.Tensor, tau: float):
     scale = min(1, tau / v_norm)
     return v * scale
 
-def _mean(updates: torch.Tensor):
+def _mean(updates: torch.Tensor, num_byzantine: int):
     return updates.mean(dim=0)
 
-def _median(updates: torch.Tensor):
+def _median(updates: torch.Tensor, num_byzantine: int):
     values_upper, _ = updates.median(dim=0)
     values_lower, _ = (-updates).median(dim=0)
     res = (values_upper - values_lower) / 2
@@ -115,18 +115,21 @@ def _median(updates: torch.Tensor):
 
 def _multiKrum(
     updates: torch.Tensor,
-    num_excluded: int = 3,
+    num_byzantine: int,
     num_aggregation: int = 1,
 ):
     distances = _pairwise_euclidean_distances(updates)
     top_m_indices = _multi_krum(
-        distances, len(updates), num_excluded, num_aggregation
+        distances, len(updates), num_byzantine, num_aggregation
     )
-    values = torch.stack([updates[i] for i in top_m_indices], dim=0).mean(dim=0)
+    values = torch.stack(
+        [updates[i] for i in top_m_indices], dim=0
+    ).mean(dim=0)
     return values
 
 def _geoMed(
     updates: torch.Tensor,
+    num_byzantine: int,
     maxiter: int = 100,
     eps: float = 1e-6,
     ftol: float = 1e-10,
@@ -164,6 +167,7 @@ def _geoMed(
 
 def _autoGM(
     updates: torch.Tensor,
+    num_byzantine: int,
     lamb: float = 2.0,
     maxiter: int = 100,
     eps: float = 1e-6,
@@ -174,6 +178,7 @@ def _autoGM(
     alpha = np.ones(len(updates)) / len(updates)
     median = _geoMed(
         updates,
+        num_byzantine=num_byzantine,
         maxiter=maxiter,
         eps=eps,
         ftol=ftol,
@@ -199,6 +204,7 @@ def _autoGM(
 
         median = median = _geoMed(
             updates,
+            num_byzantine=num_byzantine,
             maxiter=maxiter,
             eps=eps,
             ftol=ftol,
@@ -210,11 +216,11 @@ def _autoGM(
             break
     return median
 
-def _trimmedMean(updates: torch.Tensor, num_excluded=3):
-    if len(updates) - 2 * num_excluded > 0:
-        b = num_excluded
+def _trimmedMean(updates: torch.Tensor, num_byzantine: int):
+    if len(updates) - 2 * num_byzantine > 0:
+        b = num_byzantine
     else:
-        b = num_excluded
+        b = num_byzantine
         while len(updates) - 2 * b <= 0:
             b -= 1
         if b < 0:
@@ -228,6 +234,7 @@ def _trimmedMean(updates: torch.Tensor, num_excluded=3):
 
 def _centeredClipping(
     updates: torch.Tensor,
+    num_byzantine: int,
     tau: float = 10.0,
     n_iter: int = 5,
     momentum=None,
@@ -242,7 +249,7 @@ def _centeredClipping(
 
     return torch.clone(momentum)
 
-def _clustering(updates: torch.Tensor):
+def _clustering(updates: torch.Tensor, num_byzantine: int,):
     num = len(updates)
     dis_max = np.zeros((num, num))
     for i in range(num):
@@ -270,6 +277,7 @@ def _clustering(updates: torch.Tensor):
 
 def _clippedClustering(
     updates: torch.Tensor,
+    num_byzantine: int,
     agg="mean",
     signguard=False,
     max_tau=1e5,
@@ -343,7 +351,7 @@ def _clippedClustering(
 
 def _dnc(
     updates: torch.Tensor,
-    num_byzantine: int = 3,
+    num_byzantine: int,
     sub_dim: int = 1500,
     num_iters: int = 1,
     fliter_frac: float = 1.0,
@@ -372,6 +380,7 @@ def _dnc(
 
 def _signGuard(
     updates: torch.Tensor,
+    num_byzantine: int,
     agg="mean",
     linkage="average",
 ):
@@ -398,7 +407,6 @@ def _signGuard(
         features.append([feature0, feature1, feature2])
 
     kmeans = KMeans(n_clusters=2, random_state=0).fit(features)
-    print(kmeans)
 
     flag = 1 if np.sum(kmeans.labels_) > num // 2 else 0
     S2_idxs = list(
@@ -421,31 +429,42 @@ def _signGuard(
         raise NotImplementedError(f"{agg} is not supported yet.")
     return values
 
-def aggregate(accepted_gradients: list):
-    gradients = torch.from_numpy(np.array(accepted_gradients)).to(
-        dtype=torch.float
-    )
+aggregation_methods = {
+    'multiKrum': _multiKrum,
+    'geoMed': _geoMed,
+    'autoGM': _autoGM,
+    'median': _median,
+    'trimmedMean': _trimmedMean,
+    'centeredClipping': _centeredClipping,
+    'clustering': _clustering,
+    'clippedClustering': _clippedClustering,
+    'DnC': _dnc,
+    'signGuard': _signGuard,
+    'mean': _mean,
+}
 
-    aggregation_method = {
-        'multi-Krum': _multiKrum,
-        'GeoMed': _geoMed,
-        'AutoGM': _autoGM,
-        'Median': _median,
-        'TrimmedMean': _trimmedMean,
-        'CenteredClipping': _centeredClipping,
-        'Clustering': _clustering,
-        'ClippedClustering': _clippedClustering,
-        'DnC': _dnc,
-        'SignGuard': _signGuard,
-        'Mean': _mean,
-    }
-    
-    if cp['AGGREGATION'] in aggregation_method:
-        res = aggregation_method[cp['AGGREGATION']](gradients)
+
+def aggregate(
+    benign_gradients: list,
+    byzantine_gradients: list,
+    method: str = cp['AGGREGATION']
+):
+    if not byzantine_gradients:
+        gradients = torch.tensor(benign_gradients, dtype=torch.float)
+    else:
+        gradients = torch.vstack((
+            torch.tensor(benign_gradients, dtype=torch.float),
+            torch.tensor(byzantine_gradients, dtype=torch.float)
+        ))
+        
+    if method in aggregation_methods:
+        res = aggregation_methods[method](
+            gradients, num_byzantine=len(byzantine_gradients)
+        )
 
     else:
         raise NotImplementedError(
-            "This aggregation method has not been implemented."
+            f"This aggregation method {method} has not been implemented."
         )
     
     return res.detach().numpy().tolist()

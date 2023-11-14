@@ -285,7 +285,7 @@ class AI:
             )
         self.model.load_state_dict(state_dict)
     
-    def set_grad(self, list_of_grad):
+    def set_grad_step(self, list_of_grad):
         """Set the gradients to the current model
 
         Args:

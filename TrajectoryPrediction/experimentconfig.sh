@@ -11,7 +11,7 @@ export BLOCKCHAINPATH="$HOMEFOLDER/eth_data_para/data"
 export ARGOSNAME="greeter"
 export GENESISNAME="genesis_poa"
 export CONTRACTNAME="FederatedLearning"
-export SCNAME="fedsc_gradV1"
+export SCNAME="fedsc_gradV2"
 
 export GENESISFILE="${DOCKERFOLDER}/geth/files/$GENESISNAME.json"
 export CONTRACTADDRESS="${EXPERIMENTFOLDER}/scs/contractAddress.txt"
@@ -21,17 +21,17 @@ export SCFILE="${EXPERIMENTFOLDER}/scs/${SCNAME}.sol"
 export SCTEMPLATE="${EXPERIMENTFOLDER}/scs/${SCNAME}.x.sol" 
 export ARGOSFILE="${EXPERIMENTFOLDER}/experiments/${ARGOSNAME}.argos"
 export ARGOSTEMPLATE="${EXPERIMENTFOLDER}/experiments/${ARGOSNAME}.argosx"
-export SERVERFILE="${SERVERFOLDER}/main_agg_grad.py"
+export SERVERFILE="${SERVERFOLDER}/main_all_agg.py"
 
 # [DOCKER]
 export SWARMNAME=ethereum
 export CONTAINERBASE=${SWARMNAME}_eth
 
 # [ARGOS]
-export NUM1=15
+export NUM1=9
 export CON1="${EXPERIMENTFOLDER}/controllers/main.py"
 
-export NUM2=0
+export NUM2=6
 export CON2="${EXPERIMENTFOLDER}/controllers/main_byzantine.py"
 
 export NUMBOX=5
@@ -58,11 +58,11 @@ export BLOCKPERIOD=10
 
 # [OTHER]
 export SEED=0
-export TIMELIMIT=83
+export TIMELIMIT=84
 export SLEEPTIME=5
-export REPS=8
+export REPS=3
 export NOTES=""
-export NUMWEIGHTS=2912 # 2848 for tf; 2912 for torch
+export NUMPARAMS=2912 # 2848 for tf; 2912 for torch
 
 
 
